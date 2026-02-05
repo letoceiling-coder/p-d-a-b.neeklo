@@ -42,6 +42,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/access-requests', [AccessRequestController::class, 'index']);
     Route::post('/access-requests/{id}/approve', [AccessRequestController::class, 'approve']);
     Route::post('/access-requests/{id}/reject', [AccessRequestController::class, 'reject']);
+    Route::post('/access-requests/{id}/revoke', [AccessRequestController::class, 'revoke']);
 
     // Ключи AI и модели
     Route::get('/ai', [AiKeysController::class, 'index']);

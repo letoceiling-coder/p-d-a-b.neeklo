@@ -104,6 +104,35 @@ class AccessRequestController extends Controller
         ]);
     }
 
+    /**
+     * Отменить права администратора у одобренного пользователя
+     */
+    public function revoke(Request $request, int $id): JsonResponse
+    {
+        $botUser = BotUser::findOrFail($id);
+        if ($botUser->status !== BotUser::STATUS_APPROVED) {
+            return response()->json(['message' => 'Можно отменить только у одобренных пользователей'], 422);
+        }
+
+        $botUser->update([
+            'status' => BotUser::STATUS_REJECTED,
+            'decided_at' => now(),
+        ]);
+
+        AdminActionLog::log('access_request.revoked', 'bot_user', $botUser->id, ['bot_user_id' => $botUser->id]);
+
+        $this->sendTelegramNotification(
+            $botUser->telegramBot,
+            $botUser->telegram_user_id,
+            "❌ Ваши права администратора отменены.\n\nДоступ к боту закрыт. Для повторного запроса отправьте /admin в боте."
+        );
+
+        return response()->json([
+            'message' => 'Права администратора отменены',
+            'request' => $this->requestToArray($botUser->fresh()),
+        ]);
+    }
+
     private function sendTelegramNotification(TelegramBot $bot, int $chatId, string $text): void
     {
         try {

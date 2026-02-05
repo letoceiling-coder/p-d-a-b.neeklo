@@ -94,6 +94,17 @@
                 {{ actionId === req.id ? '…' : 'Отклонить' }}
               </button>
             </template>
+            <template v-else-if="req.status === 'approved'">
+              <button
+                type="button"
+                class="rounded-md bg-amber-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-amber-700"
+                :disabled="actionId === req.id"
+                title="Отменить права администратора"
+                @click="revoke(req.id)"
+              >
+                {{ actionId === req.id ? '…' : 'Отменить права' }}
+              </button>
+            </template>
           </div>
         </li>
       </ul>
@@ -152,6 +163,17 @@ async function reject(id) {
   actionId.value = id;
   try {
     await apiClient.post(`/access-requests/${id}/reject`);
+    await fetchRequests();
+  } catch (_) {}
+  finally {
+    actionId.value = null;
+  }
+}
+
+async function revoke(id) {
+  actionId.value = id;
+  try {
+    await apiClient.post(`/access-requests/${id}/revoke`);
     await fetchRequests();
   } catch (_) {}
   finally {
