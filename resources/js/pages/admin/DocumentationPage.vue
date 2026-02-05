@@ -104,6 +104,60 @@
           </p>
         </section>
 
+        <section id="ai-models-capabilities" class="doc-section bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+          <h2 class="text-xl font-semibold text-gray-900 mb-3">Возможности моделей AI</h2>
+          <p class="text-gray-600 mb-4">
+            Ниже — рекомендуемые модели для анализа договоров. В разделе «Ключи API» при добавлении модели укажите <strong>ID модели (API)</strong> из столбца «ID в API». Название можно задать любое для удобства.
+          </p>
+          <div class="overflow-x-auto">
+            <table class="min-w-full text-sm border border-gray-200 rounded-lg overflow-hidden">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-4 py-2 text-left font-medium text-gray-700">Провайдер</th>
+                  <th class="px-4 py-2 text-left font-medium text-gray-700">Название</th>
+                  <th class="px-4 py-2 text-left font-medium text-gray-700">ID в API</th>
+                  <th class="px-4 py-2 text-left font-medium text-gray-700">Возможности</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-200 text-gray-600">
+                <tr>
+                  <td class="px-4 py-3 font-medium text-gray-800">OpenAI</td>
+                  <td>GPT-4o</td>
+                  <td><code class="bg-gray-100 px-1.5 py-0.5 rounded">gpt-4o</code></td>
+                  <td>Флагманская мультимодальная модель: высокое качество ответов, поддержка текста и изображений, быстрые ответы. Подходит для сложных договоров и больших объёмов текста.</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 font-medium text-gray-800">OpenAI</td>
+                  <td>GPT-4o mini</td>
+                  <td><code class="bg-gray-100 px-1.5 py-0.5 rounded">gpt-4o-mini</code></td>
+                  <td>Облегчённая версия GPT-4o: дешевле и быстрее, хорошее качество для типовых выжимок. Удобна при большом числе запросов.</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 font-medium text-gray-800">OpenAI</td>
+                  <td>GPT-4 Turbo</td>
+                  <td><code class="bg-gray-100 px-1.5 py-0.5 rounded">gpt-4-turbo</code></td>
+                  <td>Мощная модель с большим контекстом, отличное качество анализа длинных документов. Выше стоимость запроса, чем у mini.</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 font-medium text-gray-800">Gemini</td>
+                  <td>Gemini 1.5 Flash</td>
+                  <td><code class="bg-gray-100 px-1.5 py-0.5 rounded">gemini-1.5-flash</code></td>
+                  <td>Быстрая и экономичная модель Google: низкая задержка, большой контекст, подходит для массового анализа и простых выжимок.</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 font-medium text-gray-800">Gemini</td>
+                  <td>Gemini 1.5 Pro</td>
+                  <td><code class="bg-gray-100 px-1.5 py-0.5 rounded">gemini-1.5-pro</code></td>
+                  <td>Продвинутая модель с очень большим контекстом: детальный анализ длинных договоров, сложные инструкции. Баланс качества и стоимости.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="text-gray-500 text-sm mt-3">
+            Итог: для экономии и скорости — <strong>GPT-4o mini</strong> или <strong>Gemini 1.5 Flash</strong>; для максимального качества — <strong>GPT-4o</strong> или <strong>Gemini 1.5 Pro</strong>; для очень длинных документов — <strong>GPT-4 Turbo</strong> или <strong>Gemini 1.5 Pro</strong>.
+          </p>
+        </section>
+
         <section id="contract-analyses" class="doc-section bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
           <h2 class="text-xl font-semibold text-gray-900 mb-3">История анализов</h2>
           <p class="text-gray-600">
@@ -151,6 +205,7 @@ const navItems = [
   { id: 'bot-settings', title: 'Настройки бота' },
   { id: 'access-requests', title: 'Запросы доступа' },
   { id: 'ai-keys', title: 'Ключи API' },
+  { id: 'ai-models-capabilities', title: 'Возможности моделей AI' },
   { id: 'contract-analyses', title: 'История анализов' },
   { id: 'contract-settings', title: 'Настройки анализа' },
   { id: 'action-logs', title: 'Логи действий' },
