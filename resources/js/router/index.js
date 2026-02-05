@@ -48,6 +48,12 @@ const routes = [
         meta: { title: 'История анализов' },
       },
       {
+        path: 'contract-analyses/:id',
+        name: 'admin.contract-analysis-detail',
+        component: () => import('../pages/admin/ContractAnalysisDetailPage.vue'),
+        meta: { title: 'Просмотр анализа' },
+      },
+      {
         path: 'contract-settings',
         name: 'admin.contract-settings',
         component: () => import('../pages/admin/ContractSettingsPage.vue'),

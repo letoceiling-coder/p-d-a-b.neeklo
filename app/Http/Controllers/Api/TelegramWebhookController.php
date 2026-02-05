@@ -150,12 +150,14 @@ class TelegramWebhookController extends Controller
             $result = $analysisService->analyze($fullText);
             $summary = $result['summary_text'];
             $summaryJson = $result['summary_json'] ?? null;
+            $fileInfo = $this->extractFileInfoFromMessage($message, $paths);
 
             ContractAnalysis::create([
                 'telegram_bot_id' => $bot->id,
                 'bot_user_id' => $botUser->id,
                 'summary_text' => $summary,
                 'summary_json' => $summaryJson,
+                'file_info' => $fileInfo,
             ]);
 
             $this->sendSummaryToTelegram($bot->token, $chatId, $summary);
@@ -180,6 +182,28 @@ class TelegramWebhookController extends Controller
                 }
             }
         }
+    }
+
+    /**
+     * Извлечь метаданные обработанных файлов из сообщения для сохранения в истории.
+     */
+    private function extractFileInfoFromMessage(array $message, array $paths): array
+    {
+        $fileInfo = [];
+        if (!empty($message['document']['file_name'])) {
+            $fileInfo[] = ['type' => 'document', 'name' => $message['document']['file_name']];
+        } elseif (!empty($message['photo'])) {
+            $fileInfo[] = ['type' => 'photo', 'name' => 'Изображение'];
+        }
+        if (empty($fileInfo) && !empty($paths)) {
+            foreach ($paths as $path) {
+                $base = basename($path);
+                if ($base !== '') {
+                    $fileInfo[] = ['type' => 'file', 'name' => $base];
+                }
+            }
+        }
+        return $fileInfo;
     }
 
     /**

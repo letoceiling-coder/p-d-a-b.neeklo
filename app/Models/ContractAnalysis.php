@@ -12,10 +12,12 @@ class ContractAnalysis extends Model
         'bot_user_id',
         'summary_text',
         'summary_json',
+        'file_info',
     ];
 
     protected $casts = [
         'summary_json' => 'array',
+        'file_info' => 'array',
     ];
 
     public function telegramBot(): BelongsTo

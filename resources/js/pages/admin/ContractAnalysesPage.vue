@@ -2,7 +2,7 @@
   <div class="space-y-6">
     <div class="mb-6">
       <h1 class="text-2xl font-bold text-gray-900">История анализов</h1>
-      <p class="text-gray-600 mt-1">Результаты анализа договоров, загруженных через бота. Исходные файлы не хранятся.</p>
+      <p class="text-gray-600 mt-1">Результаты анализа договоров, загруженных через бота. В детальном просмотре видны имена обработанных файлов.</p>
     </div>
 
     <div v-if="loading" class="flex items-center justify-center py-12">
@@ -28,13 +28,12 @@
               <td class="px-4 py-2 text-sm text-gray-600">{{ formatDate(item.created_at) }}</td>
               <td class="px-4 py-2 text-sm text-gray-700 max-w-xs truncate">{{ preview(item.summary_text) }}</td>
               <td class="px-4 py-2 text-right">
-                <button
-                  type="button"
+                <router-link
+                  :to="{ name: 'admin.contract-analysis-detail', params: { id: item.id } }"
                   class="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                  @click="openDetail(item.id)"
                 >
                   Подробнее
-                </button>
+                </router-link>
               </td>
             </tr>
           </tbody>
@@ -67,30 +66,6 @@
       </div>
     </template>
 
-    <!-- Модальное окно с полным результатом -->
-    <div
-      v-if="detail"
-      class="fixed inset-0 z-50 overflow-y-auto bg-black/50 flex items-center justify-center p-4"
-      @click.self="detail = null"
-    >
-      <div class="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] flex flex-col">
-        <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-          <h2 class="text-lg font-semibold text-gray-900">Анализ #{{ detail.id }}</h2>
-          <button type="button" class="text-gray-400 hover:text-gray-600" @click="detail = null">✕</button>
-        </div>
-        <div class="px-6 py-4 overflow-y-auto flex-1 space-y-4">
-          <p class="text-sm text-gray-500">{{ detail.bot_user?.first_name }} {{ detail.bot_user?.last_name }} · {{ formatDate(detail.created_at) }}</p>
-          <div>
-            <h3 class="text-sm font-medium text-gray-700 mb-2">Выжимка</h3>
-            <pre class="text-sm text-gray-800 whitespace-pre-wrap bg-gray-50 p-3 rounded border border-gray-200">{{ detail.summary_text }}</pre>
-          </div>
-          <div v-if="detail.summary_json && detail.summary_json.length">
-            <h3 class="text-sm font-medium text-gray-700 mb-2">JSON</h3>
-            <pre class="text-xs text-gray-700 bg-gray-50 p-3 rounded border border-gray-200 overflow-x-auto">{{ JSON.stringify(detail.summary_json, null, 2) }}</pre>
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -101,7 +76,6 @@ import apiClient from '@/api/axios.js';
 const loading = ref(true);
 const items = ref([]);
 const pagination = ref({ current_page: 1, last_page: 1 });
-const detail = ref(null);
 
 function formatDate(val) {
   if (!val) return '—';
@@ -132,15 +106,6 @@ async function fetchList(page = 1) {
 
 function fetchPage(page) {
   fetchList(page);
-}
-
-async function openDetail(id) {
-  try {
-    const res = await apiClient.get(`/contract-analyses/${id}`);
-    detail.value = res.data;
-  } catch (_) {
-    detail.value = null;
-  }
 }
 
 onMounted(() => {
