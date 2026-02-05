@@ -13,6 +13,7 @@ class BotUser extends Model
     public const STATUS_REJECTED = 'rejected';
 
     public const ROLE_ADMIN = 'admin';
+    public const ROLE_USER = 'user';
 
     protected $fillable = [
         'telegram_bot_id',

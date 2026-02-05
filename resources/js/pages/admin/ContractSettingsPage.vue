@@ -60,6 +60,69 @@
         />
       </div>
 
+      <hr class="border-gray-200 my-6" />
+      <h2 class="text-lg font-semibold text-gray-900 mb-4">Тексты и поддержка бота (TZ_UX)</h2>
+
+      <div class="grid grid-cols-1 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Текст главного экрана (IDLE)</label>
+          <textarea v-model="form.welcome_text" rows="4" class="rounded-md border border-gray-300 px-3 py-2 text-sm w-full" placeholder="Главное меню..." />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Текст «Доступ ограничен» (UNAUTHORIZED)</label>
+          <textarea v-model="form.unauthorized_text" rows="4" class="rounded-md border border-gray-300 px-3 py-2 text-sm w-full" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Текст экрана загрузки (UPLOAD)</label>
+          <textarea v-model="form.upload_text" rows="4" class="rounded-md border border-gray-300 px-3 py-2 text-sm w-full" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Текст «Информация» (ℹ️)</label>
+          <textarea v-model="form.info_text" rows="4" class="rounded-md border border-gray-300 px-3 py-2 text-sm w-full" />
+        </div>
+      </div>
+
+      <div class="rounded-lg border border-gray-200 bg-gray-50 p-4 space-y-4">
+        <h3 class="font-medium text-gray-800">Поддержка</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Имя</label>
+            <input v-model="form.support_name" type="text" class="rounded-md border border-gray-300 px-3 py-2 text-sm w-full" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Telegram</label>
+            <input v-model="form.support_tg" type="text" class="rounded-md border border-gray-300 px-3 py-2 text-sm w-full" placeholder="@username или ссылка" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <input v-model="form.support_email" type="text" class="rounded-md border border-gray-300 px-3 py-2 text-sm w-full" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Часы работы</label>
+            <input v-model="form.support_hours" type="text" class="rounded-md border border-gray-300 px-3 py-2 text-sm w-full" placeholder="Пн–Пт 9:00–18:00" />
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input v-model="form.allow_public_info" type="checkbox" class="rounded border-gray-300" />
+            <span class="text-sm font-medium text-gray-700">Показывать «Информация» и «Поддержка» неавторизованным</span>
+          </label>
+          <p class="text-xs text-gray-500 mt-1">Если выключено — только авторизованные увидят эти экраны</p>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Код доступа (OTP)</label>
+          <input v-model="form.bot_otp_code" type="text" class="rounded-md border border-gray-300 px-3 py-2 text-sm w-full max-w-xs" placeholder="Оставьте пустым для только whitelist" />
+          <p class="text-xs text-gray-500 mt-1">Если задан — пользователь может ввести его в боте для авторизации</p>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Количество записей в истории (в боте)</label>
+          <input v-model.number="form.history_limit" type="number" min="1" max="50" class="rounded-md border border-gray-300 px-3 py-2 text-sm w-full max-w-xs" />
+        </div>
+      </div>
+
       <div class="flex items-center gap-4">
         <button
           type="submit"
@@ -91,6 +154,22 @@ const form = ref({
   analysis_retention_months: 6,
   default_ai_model_id: 0,
   ai_system_prompt: '',
+  welcome_text: '',
+  unauthorized_text: '',
+  upload_text: '',
+  processing_text: '',
+  busy_text: '',
+  error_file_text: '',
+  info_text: '',
+  compare_stub_text: '',
+  support_name: '',
+  support_tg: '',
+  support_email: '',
+  support_hours: '',
+  support_text: '',
+  allow_public_info: true,
+  bot_otp_code: '',
+  history_limit: 10,
 });
 const aiModels = ref([]);
 
@@ -107,6 +186,22 @@ async function fetchData() {
       analysis_retention_months: s.analysis_retention_months ?? 6,
       default_ai_model_id: s.default_ai_model_id ?? 0,
       ai_system_prompt: (s.ai_system_prompt != null ? s.ai_system_prompt : '') || '',
+      welcome_text: s.welcome_text ?? '',
+      unauthorized_text: s.unauthorized_text ?? '',
+      upload_text: s.upload_text ?? '',
+      processing_text: s.processing_text ?? '',
+      busy_text: s.busy_text ?? '',
+      error_file_text: s.error_file_text ?? '',
+      info_text: s.info_text ?? '',
+      compare_stub_text: s.compare_stub_text ?? '',
+      support_name: s.support_name ?? '',
+      support_tg: s.support_tg ?? '',
+      support_email: s.support_email ?? '',
+      support_hours: s.support_hours ?? '',
+      support_text: s.support_text ?? '',
+      allow_public_info: s.allow_public_info !== false,
+      bot_otp_code: s.bot_otp_code ?? '',
+      history_limit: s.history_limit ?? 10,
     };
     aiModels.value = res.data.ai_models || [];
   } catch (_) {

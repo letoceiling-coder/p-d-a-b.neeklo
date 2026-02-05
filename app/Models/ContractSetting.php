@@ -49,6 +49,22 @@ class ContractSetting extends Model
             'analysis_retention_months',
             'default_ai_model_id',
             'ai_system_prompt',
+            'welcome_text',
+            'unauthorized_text',
+            'upload_text',
+            'processing_text',
+            'busy_text',
+            'error_file_text',
+            'info_text',
+            'compare_stub_text',
+            'support_name',
+            'support_tg',
+            'support_email',
+            'support_hours',
+            'support_text',
+            'allow_public_info',
+            'bot_otp_code',
+            'history_limit',
         ];
         $fromStore = self::getAllFromStore();
         $out = [];
@@ -69,6 +85,10 @@ class ContractSetting extends Model
             'telegram_summary_mode', 'telegram_max_message_chars', 'telegram_short_summary_chars',
             'max_photos_per_request', 'analysis_retention_months', 'default_ai_model_id',
             'ai_system_prompt',
+            'welcome_text', 'unauthorized_text', 'upload_text', 'processing_text', 'busy_text',
+            'error_file_text', 'info_text', 'compare_stub_text',
+            'support_name', 'support_tg', 'support_email', 'support_hours', 'support_text',
+            'allow_public_info', 'bot_otp_code', 'history_limit',
         ];
         foreach ($allowed as $key) {
             if (array_key_exists($key, $settings)) {
@@ -92,7 +112,12 @@ class ContractSetting extends Model
         $intKeys = [
             'telegram_max_message_chars', 'telegram_short_summary_chars',
             'max_photos_per_request', 'analysis_retention_months', 'default_ai_model_id',
+            'history_limit',
         ];
+        $boolKeys = ['allow_public_info'];
+        if (in_array($key, $boolKeys, true)) {
+            return filter_var($raw, FILTER_VALIDATE_BOOLEAN);
+        }
         if (in_array($key, $intKeys, true)) {
             return (int) $raw;
         }
