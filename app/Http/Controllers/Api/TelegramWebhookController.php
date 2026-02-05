@@ -15,6 +15,7 @@ use App\Services\Contract\DocumentTextException;
 use App\Services\Contract\DocumentTextExtractor;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -27,6 +28,14 @@ class TelegramWebhookController extends Controller
         $update = $request->all();
 
         try {
+            if (isset($update['update_id'])) {
+                $dedupeKey = 'telegram_update_' . $update['update_id'];
+                if (Cache::has($dedupeKey)) {
+                    return response()->json(['ok' => true]);
+                }
+                Cache::put($dedupeKey, true, 600);
+            }
+
             $bot = TelegramBot::where('is_active', true)->first();
             if (!$bot) {
                 return response()->json(['ok' => true]);
