@@ -63,9 +63,24 @@ class DocumentTextExtractor
 
     private function extractFromWord(string $path, string $ext): string
     {
+        if ($ext === 'docx') {
+            try {
+                $phpWord = IOFactory::load($path, 'Word2007');
+                $text = $this->getTextFromPhpWord($phpWord);
+                $text = trim(preg_replace('/\s+/u', ' ', $text));
+                if ($text !== '') {
+                    return $text;
+                }
+            } catch (DocumentTextException $e) {
+                throw $e;
+            } catch (\Throwable $e) {
+                Log::info('Word (PhpWord) failed, trying ZIP fallback: ' . $e->getMessage());
+            }
+            return $this->extractFromDocxAsZip($path);
+        }
+
         try {
-            $readerName = $ext === 'docx' ? 'Word2007' : 'MsDoc';
-            $phpWord = IOFactory::load($path, $readerName);
+            $phpWord = IOFactory::load($path, 'MsDoc');
             $text = $this->getTextFromPhpWord($phpWord);
             $text = trim(preg_replace('/\s+/u', ' ', $text));
             if ($text === '') {
@@ -78,6 +93,33 @@ class DocumentTextExtractor
             Log::warning('Word text extraction failed: ' . $e->getMessage());
             throw new DocumentTextException('Не удалось извлечь текст из документа Word.');
         }
+    }
+
+    /**
+     * Извлечь текст из DOCX как из ZIP (word/document.xml), без обработки изображений.
+     * Используется, когда PhpWord падает на встроенных EMF/картинках.
+     */
+    private function extractFromDocxAsZip(string $path): string
+    {
+        $zip = new \ZipArchive();
+        if ($zip->open($path, \ZipArchive::RDONLY) !== true) {
+            throw new DocumentTextException('Не удалось открыть документ Word.');
+        }
+        $xml = $zip->getFromName('word/document.xml');
+        $zip->close();
+        if ($xml === false || $xml === '') {
+            throw new DocumentTextException('В документе Word не найден текст.');
+        }
+        if (preg_match_all('/<w:t(?:\s[^>]*)?>([^<]*)</w:t>/u', $xml, $matches) !== false && !empty($matches[1])) {
+            $parts = array_map(function ($s) {
+                return html_entity_decode($s, ENT_XML1 | ENT_QUOTES, 'UTF-8');
+            }, $matches[1]);
+            $text = trim(preg_replace('/\s+/u', ' ', implode(' ', $parts)));
+            if ($text !== '') {
+                return $text;
+            }
+        }
+        throw new DocumentTextException('Не удалось извлечь текст из документа Word.');
     }
 
     private function getTextFromPhpWord($phpWord): string
