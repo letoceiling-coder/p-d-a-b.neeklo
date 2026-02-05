@@ -55,7 +55,7 @@ class ContractFileHandler
             throw new ContractFileException('Не удалось получить файл от Telegram.');
         }
 
-        $filePath = $fileInfo['path'] ?? null;
+        $filePath = $fileInfo['file_path'] ?? null;
         $fileName = $message['document']['file_name'] ?? basename($filePath ?? '');
         $fileSize = $message['document']['file_size'] ?? $message['photo'][array_key_last($message['photo'] ?? [])]['file_size'] ?? null;
 
@@ -108,14 +108,40 @@ class ContractFileHandler
 
     private function getFileFromTelegram(string $botToken, string $fileId): ?array
     {
+        $result = $this->getFileFromTelegramOnce($botToken, $fileId);
+        if ($result !== null && !empty($result['file_path'])) {
+            return $result;
+        }
+        // Иногда Telegram не сразу возвращает file_path — повторный запрос через 1 сек
+        if ($result !== null && empty($result['file_path'])) {
+            Log::info('Telegram getFile: file_path пустой, повтор через 1 сек', ['file_id' => $fileId, 'result' => $result]);
+            sleep(1);
+            $result = $this->getFileFromTelegramOnce($botToken, $fileId);
+        }
+        if ($result !== null && !empty($result['file_path'])) {
+            return $result;
+        }
+        if ($result !== null) {
+            Log::warning('Telegram getFile: file_path так и не получен', ['file_id' => $fileId, 'result' => $result]);
+        }
+        return $result;
+    }
+
+    private function getFileFromTelegramOnce(string $botToken, string $fileId): ?array
+    {
         try {
             $response = Http::timeout(15)->get("https://api.telegram.org/bot{$botToken}/getFile", [
                 'file_id' => $fileId,
             ]);
             $data = $response->json();
-            if ($response->successful() && !empty($data['ok']) && !empty($data['result']['file_path'])) {
-                return $data['result'];
+            if (!$response->successful() || empty($data['ok']) || empty($data['result'])) {
+                Log::warning('Telegram getFile: неверный ответ', [
+                    'status' => $response->status(),
+                    'body' => $response->body(),
+                ]);
+                return null;
             }
+            return $data['result'];
         } catch (\Throwable $e) {
             Log::warning('Telegram getFile error: ' . $e->getMessage());
         }
