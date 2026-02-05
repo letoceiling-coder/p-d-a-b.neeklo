@@ -1,6 +1,6 @@
 <template>
   <aside
-    class="relative flex flex-col bg-gray-900 text-white transition-all duration-300 border-r border-gray-800"
+    class="relative flex flex-col h-full min-h-0 bg-gray-900 text-white transition-all duration-300 border-r border-gray-800"
     :class="[
       'lg:flex',
       isMobileMenuOpen ? 'flex' : 'hidden',
@@ -28,7 +28,7 @@
         </svg>
       </button>
     </div>
-    <nav class="flex-1 overflow-y-auto space-y-1 p-4">
+    <nav class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden space-y-1 p-4">
       <router-link
         to="/admin/dashboard"
         class="flex items-center rounded-xl text-sm font-medium transition-all px-4 py-3 gap-3"

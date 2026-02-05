@@ -48,6 +48,7 @@ class ContractSetting extends Model
             'max_photos_per_request',
             'analysis_retention_months',
             'default_ai_model_id',
+            'ai_system_prompt',
         ];
         $fromStore = self::getAllFromStore();
         $out = [];
@@ -67,6 +68,7 @@ class ContractSetting extends Model
         $allowed = [
             'telegram_summary_mode', 'telegram_max_message_chars', 'telegram_short_summary_chars',
             'max_photos_per_request', 'analysis_retention_months', 'default_ai_model_id',
+            'ai_system_prompt',
         ];
         foreach ($allowed as $key) {
             if (array_key_exists($key, $settings)) {

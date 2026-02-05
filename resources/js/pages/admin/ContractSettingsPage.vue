@@ -49,6 +49,17 @@
         </select>
       </div>
 
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Системный промпт для AI</label>
+        <p class="text-xs text-gray-500 mb-2">Этот текст задаёт инструкцию модели при анализе договора. Пустое поле = значение по умолчанию (выжимка по 15–20 пунктам).</p>
+        <textarea
+          v-model="form.ai_system_prompt"
+          rows="14"
+          class="rounded-md border border-gray-300 px-3 py-2 text-sm w-full font-mono"
+          placeholder="Оставьте пустым для стандартного промпта..."
+        />
+      </div>
+
       <div class="flex items-center gap-4">
         <button
           type="submit"
@@ -79,6 +90,7 @@ const form = ref({
   max_photos_per_request: 5,
   analysis_retention_months: 6,
   default_ai_model_id: 0,
+  ai_system_prompt: '',
 });
 const aiModels = ref([]);
 
@@ -94,6 +106,7 @@ async function fetchData() {
       max_photos_per_request: s.max_photos_per_request ?? 5,
       analysis_retention_months: s.analysis_retention_months ?? 6,
       default_ai_model_id: s.default_ai_model_id ?? 0,
+      ai_system_prompt: (s.ai_system_prompt != null ? s.ai_system_prompt : '') || '',
     };
     aiModels.value = res.data.ai_models || [];
   } catch (_) {

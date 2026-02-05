@@ -13,7 +13,8 @@ use Illuminate\Support\Facades\Log;
  */
 class ContractAnalysisService
 {
-    private const SYSTEM_PROMPT = <<<'TEXT'
+    /** Промпт по умолчанию, если в настройках пусто */
+    private const DEFAULT_SYSTEM_PROMPT = <<<'TEXT'
 Ты — помощник по извлечению информации из договоров. Твоя задача: по тексту договора составить структурированную выжимку.
 
 Требования:
@@ -64,8 +65,9 @@ TEXT;
             throw new ContractAnalysisException('Не настроена активная модель AI для анализа договоров.');
         }
 
+        $systemPrompt = $this->getSystemPrompt();
         $messages = [
-            ['role' => 'system', 'content' => self::SYSTEM_PROMPT],
+            ['role' => 'system', 'content' => $systemPrompt],
             ['role' => 'user', 'content' => $this->truncateForModel($documentText)],
         ];
 
@@ -82,6 +84,16 @@ TEXT;
             'summary_text' => $summaryText,
             'summary_json' => $summaryJson,
         ];
+    }
+
+    /**
+     * Системный промпт: из настроек (админка) или конфиг/константа по умолчанию.
+     */
+    private function getSystemPrompt(): string
+    {
+        $prompt = ContractSetting::get('ai_system_prompt');
+        $prompt = is_string($prompt) ? trim($prompt) : '';
+        return $prompt !== '' ? $prompt : self::DEFAULT_SYSTEM_PROMPT;
     }
 
     /**

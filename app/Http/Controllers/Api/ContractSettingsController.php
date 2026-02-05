@@ -36,11 +36,13 @@ class ContractSettingsController extends Controller
             'max_photos_per_request' => 'nullable|integer|min:1|max:20',
             'analysis_retention_months' => 'nullable|integer|min:1|max:120',
             'default_ai_model_id' => 'nullable|integer|min:0',
+            'ai_system_prompt' => 'nullable|string|max:32000',
         ]);
 
         $payload = $request->only([
             'telegram_summary_mode', 'telegram_max_message_chars', 'telegram_short_summary_chars',
             'max_photos_per_request', 'analysis_retention_months', 'default_ai_model_id',
+            'ai_system_prompt',
         ]);
         ContractSetting::setMany(array_filter($payload, fn ($v) => $v !== null));
 
