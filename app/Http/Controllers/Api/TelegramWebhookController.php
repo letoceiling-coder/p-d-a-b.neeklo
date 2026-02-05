@@ -119,6 +119,8 @@ class TelegramWebhookController extends Controller
         $paths = [];
 
         try {
+            $this->sendStatusMessage($bot->token, $chatId, '📄 Документ получен. Загружаю и извлекаю текст...');
+
             $handler = new ContractFileHandler();
             $paths = $handler->downloadAndValidate($bot->token, $message);
 
@@ -132,6 +134,8 @@ class TelegramWebhookController extends Controller
                 ]);
                 return;
             }
+
+            $this->sendStatusMessage($bot->token, $chatId, '🤖 Анализирую текст. Для больших документов это может занять 1–2 минуты, подождите...');
 
             $analysisService = new ContractAnalysisService(app(\App\Services\Ai\AiService::class));
             $result = $analysisService->analyze($fullText);
@@ -166,6 +170,21 @@ class TelegramWebhookController extends Controller
                     Log::warning('Contract temp cleanup: ' . $e->getMessage());
                 }
             }
+        }
+    }
+
+    /**
+     * Отправить пользователю служебное сообщение о ходе обработки.
+     */
+    private function sendStatusMessage(string $botToken, int $chatId, string $text): void
+    {
+        try {
+            Http::timeout(5)->post("https://api.telegram.org/bot{$botToken}/sendMessage", [
+                'chat_id' => $chatId,
+                'text' => $text,
+            ]);
+        } catch (\Throwable $e) {
+            Log::debug('Telegram status message failed: ' . $e->getMessage());
         }
     }
 
