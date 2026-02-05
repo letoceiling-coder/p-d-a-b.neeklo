@@ -110,7 +110,7 @@ class DocumentTextExtractor
         if ($xml === false || $xml === '') {
             throw new DocumentTextException('В документе Word не найден текст.');
         }
-        if (preg_match_all('/<w:t(?:\s[^>]*)?>([^<]*)</w:t>/u', $xml, $matches) !== false && !empty($matches[1])) {
+        if (preg_match_all('#<w:t(?:\s[^>]*)?>([^<]*)</w:t>#u', $xml, $matches) !== false && !empty($matches[1])) {
             $parts = array_map(function ($s) {
                 return html_entity_decode($s, ENT_XML1 | ENT_QUOTES, 'UTF-8');
             }, $matches[1]);
