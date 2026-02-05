@@ -1,5 +1,37 @@
 # Деплой на сервер 89.169.39.244 (p-d-a-b.neeklo.ru)
 
+## Обновление через Git (рекомендуется)
+
+Репозиторий: **https://github.com/letoceiling-coder/p-d-a-b.neeklo**
+
+**С ПК:** пушите изменения в GitHub:
+```bash
+git add .
+git commit -m "описание изменений"
+git push origin main
+```
+
+**На сервере:** подтянуть код и пересобрать:
+```bash
+ssh root@89.169.39.244
+cd /var/www/p-d-a-b.neeklo.ru
+./deploy/pull-and-build.sh
+```
+
+Или вручную:
+```bash
+cd /var/www/p-d-a-b.neeklo.ru
+git pull origin main
+composer install --no-dev --optimize-autoloader --no-interaction
+npm ci && npm run build
+php artisan config:cache && php artisan route:cache
+chown -R www-data:www-data .
+```
+
+Файл `.env` на сервере не трогается при `git pull` (он в .gitignore).
+
+---
+
 ## Требования на сервере
 - Ubuntu/Debian
 - SSH доступ: `root@89.169.39.244`
