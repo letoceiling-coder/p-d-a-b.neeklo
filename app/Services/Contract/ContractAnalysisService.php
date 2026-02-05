@@ -43,12 +43,23 @@ class ContractAnalysisService
 Формат ответа: строго нумерованный список. Каждый пункт с новой строки. Без вступления и заключения.
 TEXT;
 
+    private const MERGE_SYSTEM_PROMPT = <<<'TEXT'
+Ты объединяешь выжимки по фрагментам одного договора в одну итоговую выжимку.
+
+На вход — несколько нумерованных списков (выжимки по частям документа). Нужно:
+- Объединить в один нумерованный список по темам: предмет договора, цена, сроки, оплата, документы для оплаты, ответственность, размер ответственности, подсудность, расторжение и т.д.
+- Убрать повторы: если одна и та же тема встречается в нескольких фрагментах — оставить одно объединённое или наиболее полное значение.
+- Сохранить все уникальные сведения из всех фрагментов.
+- Формат: строго нумерованный список. Без вступления и заключения.
+TEXT;
+
     public function __construct(
         protected AiService $aiService
     ) {}
 
     /**
      * Проанализировать текст договора и вернуть выжимку.
+     * Если текст длиннее порога — разбивается на части, каждая анализируется, результаты объединяются.
      *
      * @return array{summary_text: string, summary_json: array|null}
      * @throws ContractAnalysisException
@@ -65,25 +76,154 @@ TEXT;
             throw new ContractAnalysisException('Не настроена активная модель AI для анализа договоров.');
         }
 
+        $maxChars = $this->getMaxCharsPerRequest();
+        if (mb_strlen($documentText) <= $maxChars) {
+            return $this->analyzeSingle($model->id, $documentText);
+        }
+
+        return $this->analyzeByChunks($model->id, $documentText);
+    }
+
+    /**
+     * Один запрос к AI на весь текст (в пределах лимита).
+     */
+    private function analyzeSingle(int $modelId, string $text): array
+    {
         $systemPrompt = $this->getSystemPrompt();
+        $content = $this->truncateToMaxChars($text, $this->getMaxCharsPerRequest());
         $messages = [
             ['role' => 'system', 'content' => $systemPrompt],
-            ['role' => 'user', 'content' => $this->truncateForModel($documentText)],
+            ['role' => 'user', 'content' => $content],
         ];
 
-        $result = $this->aiService->chat($model->id, $messages);
+        $result = $this->aiService->chat($modelId, $messages);
         if ($result === null || trim($result['content'] ?? '') === '') {
             Log::warning('Contract analysis: AI returned empty or error');
             throw new ContractAnalysisException('Не удалось получить анализ от AI. Проверьте ключи и модель.');
         }
 
         $summaryText = trim($result['content']);
-        $summaryJson = $this->parseSummaryToStructured($summaryText);
-
         return [
             'summary_text' => $summaryText,
-            'summary_json' => $summaryJson,
+            'summary_json' => $this->parseSummaryToStructured($summaryText),
         ];
+    }
+
+    /**
+     * Разбить длинный документ на части, проанализировать каждую, объединить выжимки.
+     */
+    private function analyzeByChunks(int $modelId, string $documentText): array
+    {
+        $chunkSize = (int) config('contract.chunk_size', 32000);
+        $overlap = (int) config('contract.chunk_overlap', 2000);
+        if ($chunkSize <= 0) {
+            $chunkSize = 32000;
+        }
+        $overlap = max(0, min($overlap, $chunkSize - 1000));
+
+        $chunks = $this->splitIntoChunks($documentText, $chunkSize, $overlap);
+        if (empty($chunks)) {
+            throw new ContractAnalysisException('Не удалось разбить документ на части.');
+        }
+
+        $systemPrompt = $this->getSystemPrompt();
+        $partialSummaries = [];
+
+        foreach ($chunks as $i => $chunk) {
+            $messages = [
+                ['role' => 'system', 'content' => $systemPrompt],
+                ['role' => 'user', 'content' => $chunk],
+            ];
+            $result = $this->aiService->chat($modelId, $messages);
+            if ($result !== null && trim($result['content'] ?? '') !== '') {
+                $partialSummaries[] = trim($result['content']);
+            } else {
+                Log::warning("Contract analysis: chunk " . ($i + 1) . " returned empty");
+            }
+        }
+
+        if (empty($partialSummaries)) {
+            throw new ContractAnalysisException('Не удалось получить анализ от AI по частям документа.');
+        }
+
+        if (count($partialSummaries) === 1) {
+            $summaryText = $partialSummaries[0];
+            return [
+                'summary_text' => $summaryText,
+                'summary_json' => $this->parseSummaryToStructured($summaryText),
+            ];
+        }
+
+        $summaryText = $this->mergePartialSummaries($modelId, $partialSummaries);
+        return [
+            'summary_text' => $summaryText,
+            'summary_json' => $this->parseSummaryToStructured($summaryText),
+        ];
+    }
+
+    /**
+     * Разбить текст на фрагменты с перекрытием (по границам абзацев, где возможно).
+     */
+    private function splitIntoChunks(string $text, int $chunkSize, int $overlap): array
+    {
+        $chunks = [];
+        $len = mb_strlen($text);
+        $pos = 0;
+
+        while ($pos < $len) {
+            $take = min($chunkSize, $len - $pos);
+            $slice = mb_substr($text, $pos, $take);
+
+            if ($pos + $take < $len) {
+                $lastNewline = mb_strrpos($slice, "\n");
+                if ($lastNewline !== false && $lastNewline > (int) ($chunkSize * 0.5)) {
+                    $slice = mb_substr($slice, 0, $lastNewline + 1);
+                }
+            }
+
+            $chunks[] = $slice;
+            $pos += mb_strlen($slice);
+            if ($pos < $len && $overlap > 0) {
+                $pos -= $overlap;
+            }
+        }
+
+        return $chunks;
+    }
+
+    /**
+     * Объединить выжимки по фрагментам в одну через отдельный запрос к AI.
+     */
+    private function mergePartialSummaries(int $modelId, array $partialSummaries): string
+    {
+        $combined = '';
+        foreach ($partialSummaries as $i => $s) {
+            $combined .= "--- Фрагмент " . ($i + 1) . " ---\n\n" . $s . "\n\n";
+        }
+        $combined = trim($combined);
+
+        $maxMergeInput = 30000;
+        if (mb_strlen($combined) > $maxMergeInput) {
+            $combined = mb_substr($combined, 0, $maxMergeInput) . "\n\n[Часть текста опущена при объединении.]";
+        }
+
+        $messages = [
+            ['role' => 'system', 'content' => self::MERGE_SYSTEM_PROMPT],
+            ['role' => 'user', 'content' => $combined],
+        ];
+
+        $result = $this->aiService->chat($modelId, $messages);
+        if ($result !== null && trim($result['content'] ?? '') !== '') {
+            return trim($result['content']);
+        }
+
+        return implode("\n\n---\n\n", $partialSummaries);
+    }
+
+    private function getMaxCharsPerRequest(): int
+    {
+        $maxChars = (int) (ContractSetting::get('max_document_chars_for_ai') ?? config('contract.max_document_chars_for_ai', 35000));
+        return $maxChars <= 0 ? 35000 : $maxChars;
     }
 
     /**
@@ -111,15 +251,12 @@ TEXT;
         return AiModel::active()->ordered()->first();
     }
 
-    /**
-     * Ограничить длину текста под лимит контекста (условно ~100k символов не передаём).
-     */
-    private function truncateForModel(string $text, int $maxChars = 120000): string
+    private function truncateToMaxChars(string $text, int $maxChars): string
     {
         if (mb_strlen($text) <= $maxChars) {
             return $text;
         }
-        return mb_substr($text, 0, $maxChars) . "\n\n[Текст сокращён из-за ограничения длины.]";
+        return mb_substr($text, 0, $maxChars) . "\n\n[Текст сокращён из-за ограничения длины для API.]";
     }
 
     /**
