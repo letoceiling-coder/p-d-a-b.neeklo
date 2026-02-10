@@ -66,6 +66,12 @@ const routes = [
         meta: { title: 'Логи действий' },
       },
       {
+        path: 'lexauto/orders',
+        name: 'admin.lexauto.orders',
+        component: () => import('../pages/admin/LexautoOrdersPage.vue'),
+        meta: { title: 'LEXAUTO — Заявки' },
+      },
+      {
         path: 'documentation',
         name: 'admin.documentation',
         component: () => import('../pages/admin/DocumentationPage.vue'),

@@ -10,6 +10,8 @@ use App\Http\Controllers\Api\AiKeysController;
 use App\Http\Controllers\Api\ActionLogsController;
 use App\Http\Controllers\Api\ContractAnalysesController;
 use App\Http\Controllers\Api\ContractSettingsController;
+use App\Http\Controllers\Api\Lexauto\LexautoWebhookController;
+use App\Http\Controllers\Api\Lexauto\LexautoOrderController;
 
 /*
 |--------------------------------------------------------------------------
@@ -19,6 +21,9 @@ use App\Http\Controllers\Api\ContractSettingsController;
 
 // Webhook Telegram (публичный)
 Route::post('/telegram/webhook', [TelegramWebhookController::class, 'handle']);
+
+// Webhook LEXAUTO (розыгрыш)
+Route::post('/telegram/lexauto-webhook', [LexautoWebhookController::class, 'handle']);
 
 // Публичные роуты авторизации (только вход)
 Route::prefix('auth')->group(function () {
@@ -64,4 +69,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Логи действий
     Route::get('/action-logs', [ActionLogsController::class, 'index']);
+
+    // LEXAUTO: заявки на розыгрыш
+    Route::get('/lexauto/orders', [LexautoOrderController::class, 'index']);
+    Route::get('/lexauto/orders/{id}', [LexautoOrderController::class, 'show']);
+    Route::post('/lexauto/orders/{id}/approve', [LexautoOrderController::class, 'approve']);
+    Route::post('/lexauto/orders/{id}/reject', [LexautoOrderController::class, 'reject']);
+    Route::put('/lexauto/orders/{id}', [LexautoOrderController::class, 'update']);
 });
