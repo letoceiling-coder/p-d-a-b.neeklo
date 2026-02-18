@@ -32,6 +32,25 @@ export const useAuthStore = defineStore('auth', () => {
     }
   };
 
+  const register = async (payload) => {
+    loading.value = true;
+    error.value = null;
+    try {
+      await fetchCsrfCookie();
+      const response = await apiClient.post('/auth/register', payload);
+      user.value = response.data.user;
+      if (response.data.token) {
+        localStorage.setItem('auth_token', response.data.token);
+      }
+      return { success: true };
+    } catch (err) {
+      error.value = extractValidationError(err);
+      return { success: false, error: error.value };
+    } finally {
+      loading.value = false;
+    }
+  };
+
   const login = async (credentials) => {
     loading.value = true;
     error.value = null;
@@ -101,6 +120,7 @@ export const useAuthStore = defineStore('auth', () => {
     loading,
     error,
     isAuthenticated,
+    register,
     login,
     logout,
     fetchUser,

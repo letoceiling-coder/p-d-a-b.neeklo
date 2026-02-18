@@ -17,6 +17,7 @@ else
 fi
 
 # 2) Зависимости и сборка
+export COMPOSER_ALLOW_SUPERUSER=1
 composer install --no-dev --optimize-autoloader --no-interaction
 npm ci --omit=dev 2>/dev/null || npm install --omit=dev
 npm run build

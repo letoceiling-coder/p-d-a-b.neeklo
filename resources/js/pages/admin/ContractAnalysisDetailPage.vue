@@ -20,9 +20,26 @@
       <div class="bg-white rounded-lg border border-gray-200 p-6">
         <h1 class="text-xl font-bold text-gray-900 mb-4">Анализ #{{ analysis.id }}</h1>
         <div class="flex flex-wrap gap-4 text-sm text-gray-600 mb-4">
-          <span>{{ analysis.bot_user?.first_name }} {{ analysis.bot_user?.last_name }}</span>
-          <span v-if="analysis.bot_user?.username" class="text-gray-500">@{{ analysis.bot_user.username }}</span>
+          <template v-if="analysis.user">
+            <span>{{ analysis.user.name }}</span>
+            <span class="text-gray-500">{{ analysis.user.email }}</span>
+            <span class="text-gray-400">(веб)</span>
+          </template>
+          <template v-else>
+            <span>{{ analysis.bot_user?.first_name }} {{ analysis.bot_user?.last_name }}</span>
+            <span v-if="analysis.bot_user?.username" class="text-gray-500">@{{ analysis.bot_user.username }}</span>
+            <span class="text-gray-400">(бот)</span>
+          </template>
           <span>{{ formatDate(analysis.created_at) }}</span>
+        </div>
+        <div v-if="analysis.user_id && analysis.pdf_path" class="mb-4">
+          <button
+            type="button"
+            class="inline-flex items-center gap-2 rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
+            @click="downloadPdf"
+          >
+            Скачать PDF
+          </button>
         </div>
 
         <section class="mb-6">
@@ -92,6 +109,23 @@ async function fetchDetail() {
     analysis.value = null;
   } finally {
     loading.value = false;
+  }
+}
+
+async function downloadPdf() {
+  const id = route.params.id;
+  if (!id) return;
+  try {
+    const response = await apiClient.get(`/app/analyses/${id}/download-pdf`, { responseType: 'blob' });
+    const blob = response.data;
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `otchet-analiz-${id}.pdf`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  } catch (e) {
+    alert(e.response?.data?.message ?? 'Ошибка скачивания PDF');
   }
 }
 

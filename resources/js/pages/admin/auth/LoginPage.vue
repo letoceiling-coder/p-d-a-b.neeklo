@@ -41,6 +41,10 @@
             <span v-else>Вход...</span>
           </button>
         </form>
+        <p class="mt-4 text-center text-sm text-gray-500">
+          Нет аккаунта?
+          <router-link to="/register" class="font-medium text-blue-600 hover:text-blue-500">Регистрация по invite-коду</router-link>
+        </p>
       </div>
     </div>
   </div>
@@ -69,7 +73,7 @@ onMounted(() => {
 const handleSubmit = async () => {
   const result = await authStore.login(form.value);
   if (result.success) {
-    const redirect = router.currentRoute.value.query.redirect || '/admin/dashboard';
+    const redirect = router.currentRoute.value.query.redirect || '/app';
     router.push(redirect);
   }
 };

@@ -2,7 +2,46 @@
   <div class="space-y-6">
     <div class="mb-6">
       <h1 class="text-2xl font-bold text-gray-900">История анализов</h1>
-      <p class="text-gray-600 mt-1">Результаты анализа договоров, загруженных через бота. В детальном просмотре видны имена обработанных файлов.</p>
+      <p class="text-gray-600 mt-1">Все анализы: веб и бот. Фильтр по пользователю и дате.</p>
+    </div>
+
+    <div class="flex flex-wrap items-end gap-4 mb-4">
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Пользователь (веб)</label>
+        <select
+          v-model="filterUserId"
+          class="rounded border border-gray-300 px-3 py-2 text-sm min-w-[180px]"
+          @change="applyFilters"
+        >
+          <option value="">Все</option>
+          <option v-for="u in users" :key="u.id" :value="u.id">{{ u.name }} ({{ u.email }})</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Дата с</label>
+        <input
+          v-model="filterDateFrom"
+          type="date"
+          class="rounded border border-gray-300 px-3 py-2 text-sm"
+          @change="applyFilters"
+        />
+      </div>
+      <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Дата по</label>
+        <input
+          v-model="filterDateTo"
+          type="date"
+          class="rounded border border-gray-300 px-3 py-2 text-sm"
+          @change="applyFilters"
+        />
+      </div>
+      <button
+        type="button"
+        class="rounded-md border border-gray-300 px-3 py-2 text-sm hover:bg-gray-50"
+        @click="applyFilters"
+      >
+        Применить
+      </button>
     </div>
 
     <div v-if="loading" class="flex items-center justify-center py-12">
@@ -24,9 +63,12 @@
           <tbody class="divide-y divide-gray-200">
             <tr v-for="item in items" :key="item.id" class="hover:bg-gray-50">
               <td class="px-4 py-2 text-sm text-gray-600">{{ item.id }}</td>
-              <td class="px-4 py-2 text-sm text-gray-900">{{ item.bot_user?.first_name }} {{ item.bot_user?.last_name }} <span v-if="item.bot_user?.username" class="text-gray-500">@{{ item.bot_user.username }}</span></td>
+              <td class="px-4 py-2 text-sm text-gray-900">
+                <template v-if="item.user">{{ item.user.name }} <span class="text-gray-500">(веб)</span></template>
+                <template v-else>{{ item.bot_user?.first_name }} {{ item.bot_user?.last_name }} <span v-if="item.bot_user?.username" class="text-gray-500">@{{ item.bot_user.username }}</span> <span class="text-gray-400">(бот)</span></template>
+              </td>
               <td class="px-4 py-2 text-sm text-gray-600">{{ formatDate(item.created_at) }}</td>
-              <td class="px-4 py-2 text-sm text-gray-700 max-w-xs truncate">{{ preview(item.summary_text) }}</td>
+              <td class="px-4 py-2 text-sm text-gray-700 max-w-xs truncate">{{ preview(item.summary_text || item.title) }}</td>
               <td class="px-4 py-2 text-right">
                 <router-link
                   :to="{ name: 'admin.contract-analysis-detail', params: { id: item.id } }"
@@ -39,7 +81,7 @@
           </tbody>
         </table>
         <div v-if="items.length === 0" class="px-6 py-8 text-center text-gray-500">
-          Анализов пока нет. Они появятся после загрузки договоров через бота.
+          Анализов нет или не найдено по фильтру.
         </div>
       </div>
 
@@ -75,7 +117,11 @@ import apiClient from '@/api/axios.js';
 
 const loading = ref(true);
 const items = ref([]);
+const users = ref([]);
 const pagination = ref({ current_page: 1, last_page: 1 });
+const filterUserId = ref('');
+const filterDateFrom = ref('');
+const filterDateTo = ref('');
 
 function formatDate(val) {
   if (!val) return '—';
@@ -85,13 +131,32 @@ function formatDate(val) {
 
 function preview(text) {
   if (!text) return '—';
-  return text.length > 80 ? text.slice(0, 80) + '…' : text;
+  const s = String(text);
+  return s.length > 80 ? s.slice(0, 80) + '…' : s;
+}
+
+function params(page = 1) {
+  const p = { page, per_page: 20 };
+  if (filterUserId.value) p.user_id = filterUserId.value;
+  if (filterDateFrom.value) p.date_from = filterDateFrom.value;
+  if (filterDateTo.value) p.date_to = filterDateTo.value;
+  return p;
+}
+
+async function fetchUsers() {
+  try {
+    const res = await apiClient.get('/users', { params: { per_page: 200 } });
+    users.value = res.data.data ?? res.data ?? [];
+    if (Array.isArray(res.data) && !users.value.length) users.value = res.data;
+  } catch (_) {
+    users.value = [];
+  }
 }
 
 async function fetchList(page = 1) {
   loading.value = true;
   try {
-    const res = await apiClient.get('/contract-analyses', { params: { page, per_page: 20 } });
+    const res = await apiClient.get('/contract-analyses', { params: params(page) });
     items.value = res.data.data ?? [];
     pagination.value = {
       current_page: res.data.current_page ?? 1,
@@ -104,11 +169,16 @@ async function fetchList(page = 1) {
   }
 }
 
+function applyFilters() {
+  fetchList(1);
+}
+
 function fetchPage(page) {
   fetchList(page);
 }
 
 onMounted(() => {
+  fetchUsers();
   fetchList(1);
 });
 </script>

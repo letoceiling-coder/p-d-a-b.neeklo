@@ -34,7 +34,7 @@ class ContractSettingsController extends Controller
             'telegram_max_message_chars' => 'nullable|integer|min:100|max:4096',
             'telegram_short_summary_chars' => 'nullable|integer|min:100|max:4096',
             'max_photos_per_request' => 'nullable|integer|min:1|max:20',
-            'analysis_retention_months' => 'nullable|integer|min:1|max:120',
+            'analysis_retention_months' => 'nullable|integer|in:1,3,6,12',
             'default_ai_model_id' => 'nullable|integer|min:0',
             'ai_system_prompt' => 'nullable|string|max:32000',
             'welcome_text' => 'nullable|string|max:2000',

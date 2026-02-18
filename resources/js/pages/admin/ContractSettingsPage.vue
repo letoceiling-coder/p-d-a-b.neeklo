@@ -37,7 +37,13 @@
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Срок хранения анализов (месяцев)</label>
-          <input v-model.number="form.analysis_retention_months" type="number" min="1" max="120" class="rounded-md border border-gray-300 px-3 py-2 text-sm w-full" />
+          <select v-model.number="form.analysis_retention_months" class="rounded-md border border-gray-300 px-3 py-2 text-sm w-full max-w-xs">
+            <option :value="1">1 месяц</option>
+            <option :value="3">3 месяца</option>
+            <option :value="6">6 месяцев</option>
+            <option :value="12">12 месяцев</option>
+          </select>
+          <p class="text-xs text-gray-500 mt-1">Команда очистки удаляет анализы и PDF старше выбранного срока</p>
         </div>
       </div>
 
@@ -183,7 +189,7 @@ async function fetchData() {
       telegram_max_message_chars: s.telegram_max_message_chars ?? 4090,
       telegram_short_summary_chars: s.telegram_short_summary_chars ?? 600,
       max_photos_per_request: s.max_photos_per_request ?? 5,
-      analysis_retention_months: s.analysis_retention_months ?? 6,
+      analysis_retention_months: [1, 3, 6, 12].includes(Number(s.analysis_retention_months)) ? Number(s.analysis_retention_months) : 6,
       default_ai_model_id: s.default_ai_model_id ?? 0,
       ai_system_prompt: (s.ai_system_prompt != null ? s.ai_system_prompt : '') || '',
       welcome_text: s.welcome_text ?? '',

@@ -78,6 +78,38 @@
         <span v-if="!isCollapsed">Запросы доступа</span>
       </router-link>
       <router-link
+        to="/admin/invite-codes"
+        class="flex items-center rounded-xl text-sm font-medium transition-all px-4 py-3 gap-3"
+        :class="[
+          isCollapsed ? 'justify-center' : '',
+          route.name === 'admin.invite-codes'
+            ? 'bg-gray-800 text-white'
+            : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+        ]"
+        @click="handleMobileMenuClick"
+      >
+        <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
+        </svg>
+        <span v-if="!isCollapsed">Invite-коды</span>
+      </router-link>
+      <router-link
+        to="/admin/users"
+        class="flex items-center rounded-xl text-sm font-medium transition-all px-4 py-3 gap-3"
+        :class="[
+          isCollapsed ? 'justify-center' : '',
+          route.name === 'admin.users'
+            ? 'bg-gray-800 text-white'
+            : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+        ]"
+        @click="handleMobileMenuClick"
+      >
+        <svg class="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+        </svg>
+        <span v-if="!isCollapsed">Пользователи</span>
+      </router-link>
+      <router-link
         to="/admin/ai-keys"
         class="flex items-center rounded-xl text-sm font-medium transition-all px-4 py-3 gap-3"
         :class="[

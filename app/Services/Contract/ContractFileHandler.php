@@ -2,6 +2,7 @@
 
 namespace App\Services\Contract;
 
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use ZipArchive;
@@ -88,6 +89,94 @@ class ContractFileHandler
         }
 
         return [$localPath];
+    }
+
+    /**
+     * Обработка загруженных файлов (веб: multipart). Валидация, ZIP — распаковка и отбор.
+     * ТЗ п.3: PDF, DOC/DOCX, JPG, PNG, ZIP; лишние отклонять.
+     *
+     * @param  UploadedFile[]  $files
+     * @return array{paths: string[], file_names: string[], messages: string[], temp_dir: string}
+     */
+    public function processUploadedFiles(array $files): array
+    {
+        $allowedExtensions = array_map('strtolower', config('contract.allowed_extensions', ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png', 'zip']));
+        $maxSize = (int) config('contract.max_file_size_bytes', 20 * 1024 * 1024);
+        $maxFiles = (int) config('contract.max_upload_files', 40);
+
+        $paths = [];
+        $fileNames = [];
+        $messages = [];
+
+        $this->ensureTempDir();
+
+        foreach ($files as $uploaded) {
+            if (! $uploaded instanceof UploadedFile || ! $uploaded->isValid()) {
+                $messages[] = 'Файл отклонён — неподдерживаемый формат';
+                continue;
+            }
+
+            $originalName = $uploaded->getClientOriginalName();
+            $ext = strtolower($uploaded->getClientOriginalExtension() ?: pathinfo($originalName, PATHINFO_EXTENSION));
+
+            if (! in_array($ext, $allowedExtensions, true)) {
+                $messages[] = 'Файл отклонён — неподдерживаемый формат';
+                continue;
+            }
+
+            if ($uploaded->getSize() > $maxSize) {
+                $messages[] = 'Файл отклонён — неподдерживаемый формат';
+                continue;
+            }
+
+            if (count($paths) >= $maxFiles) {
+                $messages[] = 'Файл отклонён — неподдерживаемый формат';
+                break;
+            }
+
+            if ($ext === 'zip') {
+                $messages[] = 'Обнаружен ZIP — выполняется распаковка';
+                $localPath = $this->tempDir . '/' . uniqid('zip_') . '.zip';
+                $uploaded->move($this->tempDir, basename($localPath));
+                try {
+                    $extracted = $this->extractAndFilterZip($localPath);
+                    $this->deleteLocalFile($localPath);
+                    foreach ($extracted as $p) {
+                        if (count($paths) >= $maxFiles) {
+                            break;
+                        }
+                        $paths[] = $p;
+                        $fileNames[] = basename($p);
+                    }
+                } catch (ContractFileException $e) {
+                    $this->deleteLocalFile($localPath);
+                    $messages[] = 'Файл отклонён — неподдерживаемый формат';
+                }
+                continue;
+            }
+
+            $safeName = uniqid('f_') . '.' . $ext;
+            $targetPath = $this->tempDir . '/' . $safeName;
+            $uploaded->move($this->tempDir, $safeName);
+            $paths[] = $targetPath;
+            $fileNames[] = $originalName;
+            $messages[] = 'Файл загружен';
+        }
+
+        return [
+            'paths' => $paths,
+            'file_names' => $fileNames,
+            'messages' => $messages,
+            'temp_dir' => $this->tempDir,
+        ];
+    }
+
+    /**
+     * Путь к временной папке (для сохранения в анализ до обработки).
+     */
+    public function getTempDir(): string
+    {
+        return $this->tempDir;
     }
 
     /**
