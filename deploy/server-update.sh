@@ -19,7 +19,8 @@ fi
 # 2) Зависимости и сборка
 export COMPOSER_ALLOW_SUPERUSER=1
 composer install --no-dev --optimize-autoloader --no-interaction
-npm ci --omit=dev 2>/dev/null || npm install --omit=dev
+# npm: нужны devDependencies (vite, laravel-vite-plugin) для сборки
+npm ci 2>/dev/null || npm install
 npm run build
 
 # 3) Миграции
